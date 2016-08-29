@@ -1,0 +1,56 @@
+
+#include <APM_RC.h> // ArduPilot Mega RC Library
+
+int fwdPulse, rotPulse;
+
+//throttle
+int throttleIn=0;  //input for throttle
+int throttleOut=5; //output to throttle
+
+//brake feedback
+float leftPressure, rightPressure;
+
+//steering
+int rotIn=1;  //input for steering
+int actLeft=7; //output for left side
+int actRight=6; //output for right side
+
+void setup() {
+  APM_RC.Init();	 // APM Radio initialization
+  Serial.begin(115200);
+  Serial.println("ATV Drive controller");
+  delay(1000);
+}
+
+void loop() {
+  //obtain pressure values
+  leftPressure = (analogRead(A1)*3.5757)-395;
+  rightPressure = (analogRead(A0)*3.5757)-395;
+
+  //bypass throttle PPM to output
+  APM_RC.OutputCh(throttleOut, APM_RC.InputCh(throttleIn));
+  //if throttle is below certain point, apply brake
+  if(APM_RC.InputCh(throttleIn)<1000){
+    APM_RC.OutputCh(actRight, 700);
+    APM_RC.OutputCh(actLeft, 700);
+  }
+  //turn right
+  if(APM_RC.InputCh(rotIn)<1250) {
+    APM_RC.OutputCh(actRight, 2300);
+    APM_RC.OutputCh(actLeft, 700);
+  } else if(APM_RC.InputCh(rotIn)>=1260 && APM_RC.InputCh(rotIn)<=1750) {
+    APM_RC.OutputCh(actRight, 2300);
+    APM_RC.OutputCh(actLeft, 2300);
+    //turn left
+  } else if(APM_RC.InputCh(rotIn)>1760) {
+    APM_RC.OutputCh(actRight, 700);
+    APM_RC.OutputCh(actLeft, 2300);
+  }
+
+
+  Serial.print("Left Pressure: ");
+  Serial.print(leftPressure); //left sensor
+  Serial.print(", Right Pressure: ");
+  Serial.println(rightPressure); //right sensor
+  delay(50);
+}
